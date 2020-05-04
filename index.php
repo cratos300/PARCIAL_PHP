@@ -4,6 +4,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 include_once ("./entidades/clases.php");
 include_once ("./entidades/usuario.php");
 include_once ("./entidades/pizza.php");
+include_once ("./entidades/ventass.php");
 
 use \Firebase\JWT\JWT;
 use Monolog\Logger;
@@ -80,7 +81,7 @@ else if($_SERVER['REQUEST_METHOD'] == 'POST')
                 try {
                     $key = "example_key";
                     $payload = array(
-                    "nombre" => $user->email,
+                    "email" => $user->email,
                     "tipo" => $user->tipo
                 );
                 $jwt = JWT::encode($payload, $key);
@@ -183,28 +184,22 @@ else if($_SERVER['REQUEST_METHOD'] == 'POST')
             if($miToken != null)
             {
                 $decode = JWT::decode($miToken,$key,array('HS256'));
+                
                 if($decode->tipo == "cliente")
                 {
                     $tipo = isset($_POST['tipo']) ? $_POST['tipo'] : NULL;
                     $sabor = isset($_POST['sabor']) ? $_POST['sabor'] : NULL;
                    
                     $resultado = clases::BuscarTIPOSABORR($tipo,$sabor,"pizzas.json");
+                    
                     if($resultado != null)
                     {
                         if($resultado->stock >0)
                         {
-                            $unaVenta = new ventass($email,$tipo,$sabor,$resultado->precio,$fecha);
+                            $unaVenta = new ventass($decode->email,$tipo,$sabor,$resultado->precio,$fecha);
                             var_dump($resultado->precio);
-                            
-                            $devuelta = clases::ModificarStock("stock.json",$id_producto,$cantidad);
-                            if($devuelta >0)
-                            {
-                                echo "Se modifico correctamente";
-                            }
-                            else
-                            {
-                                echo "No se modifico correctamente";
-                            }
+                            clases::Guardar($unaVenta,"ventas.json");
+                          
                         }
                         else
                         {

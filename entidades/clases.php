@@ -90,15 +90,17 @@ class clases
     public static function BuscarTIPOSABORR($tipo,$sabor,$donde)
     {
         $array = clases::listarTodos($donde);
-        $flag = false;
+        $dato = null;
         for($i=0;$i<count($array);$i++)
         {
-            if($array->tipo == $tipo && $array->sabor == $sabor)
+            if($array[$i]->tipo == $tipo && $array[$i]->sabor == $sabor)
             {
-                $flag = true;
+                $array[$i]->stock = $array[$i]->stock -1;
+                $dato = $array[$i];
             }
         }
-        return $flag;
+        return $dato;
+    
     }
     /*
     public static function BuscarID($id,$path)
@@ -115,7 +117,7 @@ class clases
         }
         return $encontrado;
     }
-
+*/
     public static function ModificarStock($path,$id,$cantidad)
     {
         $flag = -1;
@@ -124,7 +126,7 @@ class clases
      {
         if($objetos[$i]->id == $id)
         {
-            $objetos[$i]->stock = $objetos[$i]->stock - $cantidad;
+            $objetos[$i]->stock = $objetos[$i]->stock - 1;
         break;
         }
      }
@@ -148,6 +150,6 @@ class clases
                 var_dump($value);
             }
         }
-    }*/
+    }
 
 }
