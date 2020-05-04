@@ -1,0 +1,12 @@
+{
+    "name": "herna/parcial",
+    "authors": [
+        {
+            "name": "hernan",
+            "email": "hernannvilar@gmail.com"
+        }
+    ],
+    "require": {
+        "monolog/monolog": "^2.0"
+    }
+}
