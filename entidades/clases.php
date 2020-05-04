@@ -27,34 +27,80 @@ class clases
         return json_decode($dato);
     }
     
-    /*public static function BuscarUsuario($id,$clave,$path){
+    public static function BuscarUsuario($email,$clave,$path){
         $Nuevo_Usuario = null;
         $lista = clases::listarTodos($path);
         foreach ($lista as $key => $value) {
-            if($value->id ==  $id &&  $value->clave == $clave){
-                $Nuevo_Usuario = new usuario($value->nombre,$value->dni,$value->obra_social,$value->clave,$value->tipo,$value->id);
+            if($value->email ==  $email &&  $value->clave == $clave){
+                $Nuevo_Usuario = new usuario($value->email,$value->clave,$value->tipo);
             }
         }
         return $Nuevo_Usuario;
     }
-    public static function SubirStock($usuario,$foto)
+    
+    public static function AgregarDatos($obj,$foto)
     {
-        $azar = rand(0,200);
-        $origen = $_FILES['foto']['tmp_name'];
-        $explode = explode('.',$_FILES['foto']['name']);
-        $destino = "./entidades/img/".$explode[0].$azar.".".$explode[1];
-        move_uploaded_file($origen,$destino);
-       /* $im = imagecreatefrompng($destino);
-        $marca_agua = imagecreatefrompng("./entidades/img/marca_agua2.png");
-        $margen_dcho = 10;
-        $margen_inf = 10;
-        $sx = imagesx($marca_agua);
-        $sy = imagesy($marca_agua);
-        imagecopymerge($im, $marca_agua, 0, imagesy($im) - $sy, 0, 0, $sx, $sy, 80);
-        imagepng($im, './entidades/img/nueva_imagen.jpg'); 
-        imagedestroy($im);
-        clases::Guardar($usuario,"stock.json");
+        $devolver = clases::ValidarTipoSabor($obj);
+        if($devolver == false)
+        {
+            $azar = rand(0,200);
+            $origen = $_FILES['foto']['tmp_name'];
+            $explode = explode('.',$_FILES['foto']['name']);
+            $destino = "./entidades/img/".$explode[0].$azar.".".$explode[1];
+            clases::Guardar($obj,"pizzas.json");
+            move_uploaded_file($origen,$destino);
+        }
+        else
+        {
+            echo "Error no se pudo cargar los datos, tipo y sabor existintes";
+        }
+
     }
+    public static function ValidarTipoSabor($obj)
+    {
+        $flag = false;
+        $lista = clases::listarTodos("pizzas.json");
+        var_dump($obj);
+        for($i=0;$i<count($lista);$i++)
+        {
+            if($lista[$i]->tipo == $obj->tipo && $lista[$i]->sabor == $obj->sabor)
+            {
+                $flag = true;
+                 break;
+            }
+        }
+        return $flag;
+    }
+    public static function EsEncargado($donde)
+    {
+        $array = clases::listarTodos($donde);
+        for($i=0;$i<count($array);$i++)
+        {
+            echo "tipo:".$array[$i]->tipo ."<br>" ."precio:".$array[$i]->precio. "<br>"."stock:".$array[$i]->stock ."<br>". "sabor:".$array[$i]->sabor ."<br>". "foto:".$array[$i]->foto;
+        }
+    }
+    public static function EsCliente($donde)
+    {
+        $array = clases::listarTodos($donde);
+        for($i=0;$i<count($array);$i++)
+        {
+            echo "tipo:".$array[$i]->tipo ."<br>" . "precio:".$array[$i]->precio. "<br>". "sabor:".$array[$i]->sabor ."<br>"."foto:".$array[$i]->foto;
+        }
+    }
+    public static function BuscarTIPOSABORR($tipo,$sabor,$donde)
+    {
+        $array = clases::listarTodos($donde);
+        $flag = false;
+        for($i=0;$i<count($array);$i++)
+        {
+            if($array->tipo == $tipo && $array->sabor == $sabor)
+            {
+                $flag = true;
+            }
+        }
+        return $flag;
+    }
+    /*
     public static function BuscarID($id,$path)
     {
         $productos = clases::listarTodos($path);

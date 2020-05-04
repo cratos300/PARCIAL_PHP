@@ -3,15 +3,48 @@
 require_once __DIR__ . '/vendor/autoload.php';
 include_once ("./entidades/clases.php");
 include_once ("./entidades/usuario.php");
+include_once ("./entidades/pizza.php");
+
 use \Firebase\JWT\JWT;
-use NNV\RestCountries;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 use Intervention\Image\ImageManager;
-$contador = 0;
-$restCountries = new RestCountries;
+
+
 
 if($_SERVER['REQUEST_METHOD'] == 'GET'){
     switch ($_SERVER['PATH_INFO']) {
-        case '/stock':
+        case '/pizzas':
+            $flag = true;
+            $header = getallheaders();
+            $miToken = $header["token"] ?? '';
+            try {
+                $key = "example_key";
+                //$payload = array(
+                //"nombre" => $user->nombre,
+                //"tipo" => $user->tipo
+            //);
+            
+            if($miToken != null)
+            {
+                $decode = JWT::decode($miToken,$key,array('HS256'));
+
+                if($decode->tipo == "encargado")
+                {
+                    clases::EsEncargado("pizzas.json");
+                }
+                else{
+                    clases::EsCliente("pizzas.json");
+                }     
+            }
+            else{
+                print_r("debe ingresar un token ");
+            }
+        }
+            catch (\Throwable $th) {
+                print_r($th->getMessage());
+            }
+          
             break;
         case '/ventas':        
         break;
@@ -26,12 +59,10 @@ else if($_SERVER['REQUEST_METHOD'] == 'POST')
 {
     switch ($_SERVER['PATH_INFO']) {
         case '/usuario':
-            $nombre = isset($_POST['nombre']) ? $_POST['nombre'] : NULL;
-            $dni = isset($_POST['dni']) ? $_POST['dni'] : NULL;
-            $obra_social = isset($_POST['obra_social']) ? $_POST['obra_social'] : NULL;
+            $email = isset($_POST['email']) ? $_POST['email'] : NULL;
             $clave = isset($_POST['clave']) ? $_POST['clave'] : NULL;
             $tipo = isset($_POST['tipo']) ? $_POST['tipo'] : NULL;
-            $user1 = new usuario($nombre,$dni,$obra_social,$clave,$tipo,rand(0,300));
+            $user1 = new usuario($email,$clave,$tipo);
             $lista = clases::Guardar($user1,"archivos.json");
             if($lista>0)
             {
@@ -41,15 +72,15 @@ else if($_SERVER['REQUEST_METHOD'] == 'POST')
             # code...
             break;
         case '/login':
-            $id = isset($_POST['id']) ? $_POST['id'] : NULL;
+            $email = isset($_POST['email']) ? $_POST['email'] : NULL;
             $clave = isset($_POST['clave']) ? $_POST['clave'] : NULL;
-            $user = clases::BuscarUsuario($id,$clave,"archivos.json");
+            $user = clases::BuscarUsuario($email,$clave,"archivos.json");
             if($user!= null)
             {
                 try {
                     $key = "example_key";
                     $payload = array(
-                    "nombre" => $user->id,
+                    "nombre" => $user->email,
                     "tipo" => $user->tipo
                 );
                 $jwt = JWT::encode($payload, $key);
@@ -63,8 +94,43 @@ else if($_SERVER['REQUEST_METHOD'] == 'POST')
                 echo "Usuario incorrecto";
             }
         break;
-        case '/stock':
+        case '/pizza':
+            $flag = true;
+            $header = getallheaders();
+            $miToken = $header["token"] ?? '';
+            try {
+                $key = "example_key";
+                //$payload = array(
+                //"nombre" => $user->nombre,
+                //"tipo" => $user->tipo
+            //);
+            
+            if($miToken != null)
+            {
+                $decode = JWT::decode($miToken,$key,array('HS256'));
 
+                if($decode->tipo == "encargado")
+                {
+                    $tipo = isset($_POST['tipo']) ? $_POST['tipo'] : NULL;
+                    $precio = isset($_POST['precio']) ? $_POST['precio'] : NULL;
+                    $stock = isset($_POST['stock']) ? $_POST['stock'] : NULL;
+                    $sabor = isset($_POST['sabor']) ? $_POST['sabor'] : NULL;
+                    $foto = isset($_FILES["foto"]["name"]) ? $_FILES["foto"]["name"] : NULL;
+                    $user = new pizza($tipo,$precio,$stock,$sabor,$foto);
+                    $lista = clases::AgregarDatos($user,$foto);
+                }
+                else{
+                    echo "no es encargado";
+                }     
+            }
+            else{
+                print_r("debe ingresar un token ");
+            }
+        }
+            catch (\Throwable $th) {
+                print_r($th->getMessage());
+            }
+               
             /*$flag = true;
             $header = getallheaders();
             $miToken = $header["token"] ?? '';
@@ -103,7 +169,7 @@ else if($_SERVER['REQUEST_METHOD'] == 'POST')
            */
         break;  
         case '/ventas':
-            /*
+            $fecha = date('Y/m/d');
             $flag = true;
             $header = getallheaders();
             $miToken = $header["token"] ?? '';
@@ -117,19 +183,19 @@ else if($_SERVER['REQUEST_METHOD'] == 'POST')
             if($miToken != null)
             {
                 $decode = JWT::decode($miToken,$key,array('HS256'));
-                if($decode->tipo == "usuario")
+                if($decode->tipo == "cliente")
                 {
-                    $id_producto = isset($_POST['id_producto']) ? $_POST['id_producto'] : NULL;
-                    $cantidad = isset($_POST['cantidad']) ? $_POST['cantidad'] : NULL;
-                    $id_usuario = isset($_POST['id_usuario']) ? $_POST['id_usuario'] : NULL;
-                    $resultado = clases::BuscarId($id_producto,"stock.json");
+                    $tipo = isset($_POST['tipo']) ? $_POST['tipo'] : NULL;
+                    $sabor = isset($_POST['sabor']) ? $_POST['sabor'] : NULL;
+                   
+                    $resultado = clases::BuscarTIPOSABORR($tipo,$sabor,"pizzas.json");
                     if($resultado != null)
                     {
-                        if($resultado->stock >= $cantidad)
+                        if($resultado->stock >0)
                         {
-                            $unaVenta = new VentaUsuario($id_producto,$cantidad,$id_usuario,$resultado->precio,($cantidad*$resultado->precio));
-                            var_dump($unaVenta);
-                            clases::Serializarr($unaVenta,"ventas.txt");
+                            $unaVenta = new ventass($email,$tipo,$sabor,$resultado->precio,$fecha);
+                            var_dump($resultado->precio);
+                            
                             $devuelta = clases::ModificarStock("stock.json",$id_producto,$cantidad);
                             if($devuelta >0)
                             {
@@ -156,7 +222,7 @@ else if($_SERVER['REQUEST_METHOD'] == 'POST')
         }
             catch (\Throwable $th) {
                 print_r($th->getMessage());
-             }*/
+             }
         break;
         default:
             # code...
